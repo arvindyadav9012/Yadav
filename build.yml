@@ -1,0 +1,54 @@
+name: NMRC BUILD FINAL
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Unzip and Build APK
+        run: |
+          echo "Listing files..."
+          ls -la
+          echo "Unzipping ZIP..."
+          unzip -o "NMRC_INVENTORY_ANDROID_GITHUB_BUILD_FINAL_FIXED.zip"
+          ls -la
+          GW=$(find. -type f -name "gradlew" | head -n 1)
+          echo "Gradlew at: $GW"
+          if [ -z "$GW" ]; then
+            echo "ERROR: gradlew not found"
+            find. -type f | head -n 100
+            exit 1
+          fi
+          DIR=$(dirname "$GW")
+          cd "$DIR"
+          echo "Building in $DIR"
+          if [ -f "../../logo.png" ]; then
+            cp "../../logo.png" app/src/main/res/mipmap-hdpi/ic_launcher.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-mdpi/ic_launcher.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-xhdpi/ic_launcher.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-xxhdpi/ic_launcher.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-hdpi/ic_launcher_round.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-mdpi/ic_launcher_round.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-xhdpi/ic_launcher_round.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png || true
+            cp "../../logo.png" app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png || true
+            rm -rf app/src/main/res/mipmap-anydpi-v26 || true
+          fi
+          sed -i 's/android:label="[^"]*"/android:label="NMRC INVENTORY"/' app/src/main/AndroidManifest.xml || true
+          chmod +x gradlew
+         ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NMRC-FINAL-APK
+          path: '**/build/outputs/apk/debug/*.apk'
